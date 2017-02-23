@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Dmitri Kunin">
+    <title>2017 Conferences</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.2.4/milligram.css">
+    <style>
+      * {
+        font-family: Roboto;
+      }
+      body {
+        padding: 20px;
+      }
+      .single-conf {
+        padding: 10px 0;
+      }
+      h5 {
+        margin-bottom: 0;
+      }
+      .link {
+        text-decoration: none;
+        color: black;
+      }
+      .link-icon {
+        font-size: .6em;
+        vertical-align: top;
+      }
+      label {
+        display: block;
+      }
+    </style>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.10/vue.min.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="text/template" class="confList">
+      <div>
+        <h3>Conference List
+        <div><small>Data source: <a target="_blank" class="link" href="https://github.com/ryanburgess/2017-conferences">ryanburgess/2017-conferences</a></div></small></h3>
+
+        <div>
+          <input v-model="textFilter" placeholder="Text filter" type="text">
+          <label>
+            Show passed events
+            <input v-model="showPast" type="checkbox" class="visible">
+          </label>
+        </div>
+        <div>
+          <div v-if="!confs.length">
+            <small>No info</small>
+          </div>
+          <div class="single-conf" v-for="conf in confs">
+            <h5><a target="_blank" class="link" :href="conf.url">{{conf.title}}</a> <a class="link link-icon" :href="getCalendarUrl(conf, 2017)">★</a></h5>
+            <div>{{conf.when}}</div>
+            <div><a target="_blank" class="link" :href="'https://www.google.ru/maps?q=' + conf.where">{{conf.where}}</a></div>
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/javascript">
+      // format date, functions credit goes to https://github.com/ryanburgess/2017-conferences/blob/master/index.js
+      let formatDateYYYYMMDD = function(_dateString) {
+        let _d = new Date(_dateString);
+        return new Date(_d - _d.getTimezoneOffset() * 60 * 1000).toJSON().split(/T/)[0].replace(/-/g, '');
+      };
+
+      let calculateDates = function(conf, year, noformat) {
+          let when = conf.when.replace(/(\d)(st|nd|rd|th)/g, '$1');
+          let _startDay = when.match(/\d+/);
+          let _startDate = formatDateYYYYMMDD(`${conf.month} ${_startDay}, ${year}`);
+          let _endDay = when.match(/(\d+)(?:-|–)(\d+)/);
+          let _endMonth = when.match(/\d+(?:-|–)([^\d\s]+)/);
+          let _endDate;
+
+          _endMonth = _endMonth ? _endMonth[1] : null;
+
+          if (_endDay) {
+            _endDate = formatDateYYYYMMDD(`${_endMonth || conf.month} ${_endDay[2]}, ${year}`);
+          } else if (_endMonth) {
+            _endDay = when.match(/(\d)+, 2017/)[1];
+            _endDate = formatDateYYYYMMDD(`${_endMonth || conf.month} ${_endDay}, ${year}`);
+          }
+
+          if (noformat) {
+            return `${conf.month} ${_startDay}, ${year}`;
+          }
+
+          if (_endDate) {
+            return `${_startDate}/${_endDate}`;
+          } else {
+            return `${_startDate}/${_startDate}`;
+          }
+      }
+
+      let getCalendarUrl = function(conf, year) {
+        let _date = calculateDates(conf, year);
+        return `https://www.google.com/calendar/event?action=TEMPLATE&dates=${_date}&text=${conf.title}&location=${conf.where}&details=${conf.url}`;
+      };
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var request = new XMLHttpRequest();
+        request.open('GET', 'https://raw.githubusercontent.com/ryanburgess/2017-conferences/master/list.json', true);
+        request.onload = function() {
+          if (request.status >= 200 && request.status < 400) {
+            const confs = JSON.parse(request.responseText).sort((a, b) => {
+              return new Date(calculateDates(a, 2017, true)) - new Date(calculateDates(b, 2017, true));
+            });
+
+            const vueSettings = {
+              el: '#app',
+              template: document.querySelector('.confList').innerHTML,
+              data: {
+                textFilter: '',
+                showPast: false
+              },
+              methods: {
+                filterconfs: function(confs){
+                  return confs
+                    .reduce((newArray, singleConf) => {
+                      if (
+                        this.textFilter && !singleConf.title.toLowerCase().includes(this.textFilter.toLowerCase()) ||
+                        (!this.showPast && new Date() - new Date(calculateDates(singleConf, 2017, true)) > 0)
+                      ) {
+                        return newArray;
+                      }
+                      return newArray.concat(singleConf);
+                    }, []);
+                }
+              },
+              computed: {
+                confs: function() {
+                  return this.filterconfs(confs);
+                }
+              }
+            };
+
+            const app = new Vue(vueSettings);
+          }
+        };
+        request.send();
+      });
+    </script>
+  </body>
+</html>
