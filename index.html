@@ -39,7 +39,7 @@
       <div>
         <h3>Conference List
         <div><small>Data source: <a target="_blank" class="link" href="https://github.com/ryanburgess/2017-conferences">ryanburgess/2017-conferences</a></div></small></h3>
-
+        <button v-if="canShare" class="button button-outline" v-on:click.prevent="shareDocument" >Share this</button>
         <div>
           <input v-model="textFilter" placeholder="Text filter" type="text">
           <label>
@@ -115,9 +115,19 @@
               data: {
                 textFilter: '',
                 showPast: false,
-                year: 2017
+                year: 2017,
+                canShare: navigator.share !== undefined
               },
               methods: {
+                shareDocument: function(){
+                  if (navigator.share !== undefined) {
+                    navigator.share({
+                      title: document.title,
+                      url: location.href
+                    }).then(() => console.log('Successful share'))
+                    .catch((error) => console.log('Error sharing:', error));
+                  }
+                }, 
                 filterconfs: function(confs){
                   return confs
                     .reduce((newArray, singleConf) => {
