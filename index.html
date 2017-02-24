@@ -26,10 +26,7 @@
         text-decoration: none;
         color: black;
       }
-      .link-icon {
-        font-size: .6em;
-        vertical-align: top;
-      }
+      
       label {
         display: block;
       }
@@ -55,7 +52,7 @@
             <small>No info</small>
           </div>
           <div class="single-conf" v-for="conf in confs">
-            <h5><a target="_blank" class="link" :href="conf.url">{{conf.title}}</a> <a class="link link-icon" :href="getCalendarUrl(conf, 2017)">★</a></h5>
+            <h5><a target="_blank" class="link" :href="conf.url">{{conf.title}}</a> <a class="link link-icon" :href="getCalendarUrl(conf, year)">📆</a></h5>
             <div>{{conf.when}}</div>
             <div><a target="_blank" class="link" :href="'https://www.google.ru/maps?q=' + conf.where">{{conf.where}}</a></div>
           </div>
@@ -117,7 +114,8 @@
               template: document.querySelector('.confList').innerHTML,
               data: {
                 textFilter: '',
-                showPast: false
+                showPast: false,
+                year: 2017
               },
               methods: {
                 filterconfs: function(confs){
